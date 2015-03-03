@@ -74,7 +74,7 @@ CHAR2MORSE	STMFD		R13!,{R14}	; push Link Register (return address) on stack
 ;
 LED_ON 	   	push 		{r3-r4}		; preserve R3 and R4 on the R13 stack
 		    MOV			R3, #0xA0000000
-			STR			R3, [R4, #0x20]
+		    STR			R3, [R4, #0x20]
 		    pop 		{r3-r4}
 		    BX 		LR		; branch to the address in the Link Register.  Ie return to the caller
 
