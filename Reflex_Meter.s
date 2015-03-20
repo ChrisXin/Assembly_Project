@@ -147,3 +147,33 @@ RandomNum		STMFD		R13!,{R1, R2, R3, R14}
 
 ;		Delay 0.1ms (100us) * R0 times
 ; 		aim for better than 10% accuracy
+DELAY			STMFD		R13!,{R0, R2, R14}
+
+Multiple_Delay
+				MOV         R2,#0x84	    ; value for 0.1 sec delay		
+				TEQ			R0, #0			; Compare R0 with 0, set a status register
+				BEQ 		exitDelay       ; stop delay branch when R0 equals 0 
+still_on
+				SUBS		R2, #1          ; decrement R2 by 1
+				BGT 		still_on        ; loop until R2 is 0
+				
+				SUBS		R0, #1          ; decrement R0 when finish the previuos 0.1 second delay 
+				B	Multiple_Delay		    ; loop continuously 
+exitDelay		LDMFD		R13!,{R0, R2, R15}		
+
+LED_BASE_ADR	EQU 	0x2009c000 		; Base address of the memory that controls the LEDs 
+PINSEL3			EQU 	0x4002c00c 		; Address of Pin Select Register 3 for P1[31:16]
+PINSEL4			EQU 	0x4002c010 		; Address of Pin Select Register 4 for P2[15:0]
+FIO2PIN			EQU		0x2009C054      ; Set Address of Fast Input output Pin as a constant 
+FIO2MASK		EQU		0x2009C050      ; Set Address of Fast Input output mask as a constant
+
+;FIO0PIN
+;	Usefull GPIO(General Purpose IO)Registers
+;	FIODIR  - register to set individual pins as input or output
+;	FIOPIN  - register to read and write pins
+;	FIOSET  - register to set I/O pins to 1 by writing a 1
+;	FIOCLR  - register to clr I/O pins to 0 by writing a 1
+
+				ALIGN 
+
+				END 
