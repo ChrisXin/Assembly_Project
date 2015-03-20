@@ -94,3 +94,56 @@ Send_Bit		BL			DISPLAY_NUM      ; send the Least significant 8 bits to the LEDs 
 
 ; Display the number in my counter R1 onto the 8 LEDs
 
+DISPLAY_NUM		STMFD		R13!,{R1, R2, R3, R14}
+                
+                
+                ; Dealing with Port 1 (bit 28,29,31)
+				MOV			R7, #0x00C0         ; initialize R7 with "1100 0000" to deal with port 28,29
+				AND			R7, R7, R1          ;  using and command to check whether my counter (R1)'s first two significant bits are 1
+                RBIT		R7, R7				;  reverse R7 register's bit (because direction of my counter and the port bits are opposite!)
+				LSL			R7, #4              ;  logical shift left to match the pin 28 and 29
+				MOV         R2 , #0x0020        ; initialize R2 with  "0010 0000" to deal with port 31
+				AND			R2, R2, R1          ; using and command to check whether my counter (R1)'s third significant bit is 1
+				LSL			R2, #26             ; logically shift left by 26 in oder to match bit 31 (p1.31)
+  				ORR			R7, R7, R2	        ; combine the bit 28,29 and 31 of values from counter register 1 first three significant bit
+				EOR			R7, #0xB0000000		; invert bits 31, 29, & 28 using xor opearation with "1011 0000 0000 0000 0000 0000 0000 0000"
+				STR			R7, [R10, #0x20]	; write the bit sequence to the memory for port 1
+				
+			
+				; Dealing with Port 2 (bit 2,3,4,5,6)		
+				LSL		    R1, #25             ; logic shift left by 25 bits
+                RBIT		R1, R1		        ; reverse R1 register's bit in order to match bit 2.6 to 2.2 from left to right
+				EOR			R1, #0x0000007C     ; invert bits 2,3,4,5,6
+				STR 		R1, [R10, #0x40]	; write the bit sequence to the memory for port 2 
+				
+				LDMFD		R13!,{R1, R2, R3, R15}
+				
+
+; R11 holds a 16-bit random number via a pseudo-random sequence as per the Linear feedback shift register (Fibonacci) on WikiPedia
+; R11 holds a non-zero 16-bit number.  If a zero is fed in the pseudo-random sequence will stay stuck at 0
+; Take as many bits of R11 as you need.  If you take the lowest 4 bits then you get a number between 1 and 15.
+;   If you take bits 5..1 you'll get a number between 0 and 15 (assuming you right shift by 1 bit).
+;
+; R11 MUST be initialized to a non-zero 16-bit value at the start of the program OR ELSE!
+; R11 can be read anywhere in the code but must only be written to by this subroutine
+RandomNum		STMFD		R13!,{R1, R2, R3, R14}
+
+				AND			R1, R11, #0x8000
+				AND			R2, R11, #0x2000
+				LSL			R2, #2
+				EOR			R3, R1, R2
+				AND			R1, R11, #0x1000
+				LSL			R1, #3
+				EOR			R3, R3, R1
+				AND			R1, R11, #0x0400
+				LSL			R1, #5
+				EOR			R3, R3, R1		; the new bit to go into the LSB is present
+				LSR			R3, #15
+				LSL			R11, #1
+				ORR			R11, R11, R3
+				
+				LDMFD		R13!,{R1, R2, R3, R15}
+
+
+;		Delay 0.1ms (100us) * R0 times
+; 		aim for better than 10% accuracy
